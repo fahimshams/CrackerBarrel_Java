@@ -1,0 +1,6 @@
+Download the program or copy and paste it in notepad.
+Copy the path of the file saved.
+Open CMD
+Write javac
+Write cd and paste the path of the file
+Run the program by typing "java [Program name]"
