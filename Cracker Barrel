@@ -1,0 +1,415 @@
+import java.io.IOException;
+import java.io.IOException;
+import java.util.List;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
+public class CrackerBoard{
+	
+	public static void main(String[] args) throws IOException {
+		
+		
+		Play play = new Play(args);
+		
+		play.DFS();
+		
+		
+	}
+	
+	
+}
+
+
+public class Board{
+	
+	boolean[][] pins = new boolean[5][5];
+	
+	public Board(int row, int col){
+		for (int i = 0; i < 5; ++i)
+			for (int j = 0; j <= i; ++j)
+				pins[i][j] = true;
+		pins[row][col] = false;
+		
+	}
+	
+	public Board(int board){
+		for (int i = 4; i >= 0; --i)
+			for (int j = i; j >= 0; --j) {
+				if ((board & 1 ) == 1) 
+					pins[i][j] = true;
+				else
+					pins[i][j] = false;
+				board /= 2;
+			}
+		
+	}
+	
+	public Board(Board that){
+		for (int i = 0; i < 5; ++i)
+			for (int j = 0; j <= i; ++j)
+				pins[i][j] = that.pins[i][j];
+		
+		
+	}
+	
+	public List<Board> possibleBoards(){
+		
+		List<Board> boards = new ArrayList<Board>();
+		
+		for (int i = 0; i < 5; ++i)
+			for (int j = 0; j <= i; ++j) {
+				Place start = new Place(i,j);
+				List<Turn> possibleMoves = Turns.getMoves(start);
+				for (Turn move : possibleMoves) {
+					if (validMove(move))
+						boards.add(jump(move));
+				}
+			}
+		
+		return boards;
+		
+	}
+	
+	public boolean validMove(Turn move) {
+		if (!pins[move.getStart().getRow()][move.getStart().getCol()])	
+			return false;
+		if (!pins[move.getJump().getRow()][move.getJump().getCol()])	
+			return false;
+		if (pins[move.getEnd().getRow()][move.getEnd().getCol()])		
+			return false;
+		
+		return true;
+	}
+	
+	
+		public Board jump(Turn move) {
+		Board gb = new Board(this);
+		
+		gb.pins[move.getStart().getRow()][move.getStart().getCol()] = false;
+		gb.pins[move.getJump().getRow()][move.getJump().getCol()] = false;
+		gb.pins[move.getEnd().getRow()][move.getEnd().getCol()] = true;
+		
+		return gb;
+	}
+	
+	
+	public boolean finalBoard() {
+		int remainingPins = 0;
+
+		for (int i = 0; i < 5; ++i)
+			for (int j = 0; j <= i; ++j) 
+				if (pins[i][j]) {
+					remainingPins++;
+					if (remainingPins > 1)	
+						return false;
+				}
+		
+	    return remainingPins == 1;
+	}	
+
+	
+	public int toInt() {
+		int ret = 0;
+		for (int i = 0; i < 5; ++i)
+			for (int j = 0; j <= i; ++j) {
+				ret *= 2;
+				if (pins[i][j]) {
+					ret |= 1;
+				}
+			}
+
+		return ret;
+	}
+	
+	
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		
+		for (int i = 0; i < 5; ++i) {
+			for (int s = 4-i; s > 0; --s)
+				sb.append(" ");
+			for (int j = 0; j <= i; ++j) {
+				sb.append(pins[i][j] ? 'X' : '.').append(" ");
+			}
+			sb.append("\n");
+		}
+
+		
+		return sb.toString();
+	}
+	
+}
+
+public class Turns {
+	private static Map<Place,List<Turn>> vMoves = new HashMap<Place,List<Turn>>();
+	
+	static {
+		
+		Place start;
+		
+		start = new Place(0,0);	
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(1,0), new Place(2,0)));
+		vMoves.get(start).add(new Turn(start, new Place(1,1), new Place(2,2)));
+		
+		start = new Place(1,0);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(2,0), new Place(3,0)));
+		vMoves.get(start).add(new Turn(start, new Place(2,1), new Place(3,2)));
+		
+		start = new Place(1,1);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(2,1), new Place(3,1)));
+		vMoves.get(start).add(new Turn(start, new Place(2,2), new Place(3,3)));	
+		
+		start = new Place(2,0);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(1,0), new Place(0,0)));
+		vMoves.get(start).add(new Turn(start, new Place(2,1), new Place(2,2)));
+		vMoves.get(start).add(new Turn(start, new Place(3,0), new Place(4,0)));
+		vMoves.get(start).add(new Turn(start, new Place(3,1), new Place(4,2)));
+	
+		start = new Place(2,1);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(3,1), new Place(4,1)));
+		vMoves.get(start).add(new Turn(start, new Place(3,2), new Place(4,3)));
+		
+		start = new Place(2,2);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(1,1), new Place(0,0)));
+		vMoves.get(start).add(new Turn(start, new Place(2,1), new Place(2,0)));
+		vMoves.get(start).add(new Turn(start, new Place(3,2), new Place(4,2)));
+		vMoves.get(start).add(new Turn(start, new Place(3,3), new Place(4,4)));	
+		
+		start = new Place(3,0);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(2,0), new Place(1,0)));
+		vMoves.get(start).add(new Turn(start, new Place(3,1), new Place(3,2)));	
+
+		start = new Place(3,1);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(2,1), new Place(1,1)));
+		vMoves.get(start).add(new Turn(start, new Place(3,2), new Place(3,3)));
+
+		start = new Place(3,2);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(2,1), new Place(1,0)));
+		vMoves.get(start).add(new Turn(start, new Place(3,1), new Place(3,0)));	
+		
+		start = new Place(3,3);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(2,2), new Place(1,1)));
+		vMoves.get(start).add(new Turn(start, new Place(3,2), new Place(3,1)));	
+		
+		start = new Place(4,0);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(3,0), new Place(2,0)));
+		vMoves.get(start).add(new Turn(start, new Place(4,1), new Place(4,2)));	
+
+		start = new Place(4,1);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(3,1), new Place(2,1)));
+		vMoves.get(start).add(new Turn(start, new Place(4,2), new Place(4,3)));	
+		
+		start = new Place(4,2);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(3,1), new Place(2,0)));
+		vMoves.get(start).add(new Turn(start, new Place(3,2), new Place(2,2)));
+		vMoves.get(start).add(new Turn(start, new Place(4,1), new Place(4,0)));
+		vMoves.get(start).add(new Turn(start, new Place(4,3), new Place(4,4)));
+		
+		start = new Place(4,3);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(3,2), new Place(2,1)));
+		vMoves.get(start).add(new Turn(start, new Place(4,2), new Place(4,1)));
+
+		start = new Place(4,4);
+		vMoves.put(start, new ArrayList<Turn>());	
+		vMoves.get(start).add(new Turn(start, new Place(3,3), new Place(2,2)));
+		vMoves.get(start).add(new Turn(start, new Place(4,3), new Place(4,2)));	
+	}
+
+	
+	public static List<Turn> getMoves(Place position) {
+		if (!vMoves.containsKey(position))
+			throw new RuntimeException("Invalid position: " + position);
+		
+		return vMoves.get(position);
+	}
+
+	
+	public String toString() {
+		return vMoves.toString();
+	}
+}
+
+public class Turn{
+	
+	private Place start;
+	private Place jump;
+	private Place end;
+	
+		public Turn(Place start, Place jump, Place end) {
+		this.start = start;
+		this.jump = jump;
+		this.end = end;
+	}
+	
+	public Place getStart() { return start; }
+	public Place getJump() { return jump; }
+	public Place getEnd() { return end; }
+	
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append("{"+start);
+		sb.append(","+jump);
+		sb.append(","+end+ "}");
+		
+		return sb.toString();
+	}
+	
+}
+
+public class Place {
+	int row;
+	int col;
+	
+	public Place(int row, int col) {
+		this.row = row;
+		this.col = col;
+	}
+	
+	public int getRow() { return row; }
+	public int getCol() { return col; }
+
+	public String toString() {
+		return "[" + row + "," + col + "]";
+	}
+	
+	public int hashCode() {
+		int result = 17;
+		
+		result = 37*result + row;
+		result = 37*result + col;
+		
+		return result;
+	}
+	
+	public boolean equals(Object other) {
+		if (!(other instanceof Place))
+			return false;
+		Place that = (Place) other;
+		
+		if (this.row != that.row)
+			return false;
+		
+		return this.col == that.col;
+	}
+}
+public class GameTree {
+	GameTree level;
+	
+	Board gb;
+	List<GameTree> children = new ArrayList<GameTree>();
+	
+	public GameTree(Board gb) {
+		this.gb = gb;
+	}
+	
+	public void addChild(GameTree child) {
+		children.add(child);
+	}
+
+	public Board getGameBoard() { return gb; }
+
+	public boolean hasChildren() {
+		return children.size() > 0;
+	}
+
+	public GameTree getFirstChild() {
+		return children.get(0);
+	}
+
+	public void removeFirstChild() {
+		children.remove(0);
+	}
+	
+	public int numChildren() {
+		return children.size();
+	}
+}
+public class Play {
+	
+	Board startBoard;
+	
+	
+	public Play(String[] args) throws IOException {
+		if (args.length == 0) {
+	
+		int n1,n2;
+                BufferedReader stdin = new BufferedReader (new InputStreamReader(System.in));
+                       
+                    init(0,0);
+		}
+ else
+     init(Integer.parseInt( args[0]),Integer.parseInt( args[1]));
+	}
+	
+	
+	private void init(int row, int col) {
+		startBoard = new Board(row, col);
+	}
+	
+	//DFS function
+	public void DFS() {
+		GameTree root = new GameTree(startBoard);
+		
+		for (Board nextBoard : startBoard.possibleBoards()) {
+			GameTree nextNode = new GameTree(nextBoard);
+			if (play(nextBoard, nextNode))
+				root.addChild(nextNode);
+		}
+		
+                printWinningGame(root);
+
+	}
+	
+	
+	private void printWinningGame(GameTree parent) {
+		System.out.println(parent.getGameBoard());
+		
+		if (parent.numChildren() > 0) {
+			GameTree nextNode = parent.getFirstChild();			
+			printWinningGame(nextNode);				// recurse
+			if (nextNode.numChildren() == 0)	
+				parent.removeFirstChild();
+		} else {
+			System.out.println("===============================================");
+		}
+	}
+	
+	
+	private boolean play(Board gb, GameTree parent) {
+		
+		if (gb.finalBoard())	
+			return true;
+		
+		List<Board> nextBoards = gb.possibleBoards();
+			
+		boolean found = false;
+		
+		for (Board nextBoard : nextBoards) {
+			GameTree nextNode = new GameTree(nextBoard);
+			if (play(nextBoard, nextNode)) {				
+				found = true;
+				parent.addChild(nextNode);
+			}
+		}
+		
+		return found;
+	}
+}
